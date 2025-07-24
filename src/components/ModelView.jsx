@@ -1,10 +1,13 @@
 import { OrbitControls, PerspectiveCamera, View } from '@react-three/drei'
 import Lights from './Lights'
-import Iphone from './Iphone'
 import * as THREE from 'three'
-import { Suspense } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import Loader from './Loader'
-export default function ModelView ({
+
+// Lazy-load Iphone component
+const Iphone = lazy(() => import('./Iphone'))
+
+export default function ModelView({
   index,
   groupRef,
   gsapType,
@@ -13,6 +16,9 @@ export default function ModelView ({
   size,
   item
 }) {
+  // Memoize the target vector to avoid re-creating every render
+  const target = useMemo(() => new THREE.Vector3(0, 0, 0), [])
+
   return (
     <View
       index={index}
@@ -22,30 +28,42 @@ export default function ModelView ({
       {/* Ambient Light */}
       <ambientLight intensity={0.3} />
 
+      {/* Perspective Camera */}
       <PerspectiveCamera makeDefault position={[0, 0, 4]} />
 
+      {/* Lighting setup */}
       <Lights />
 
+      {/* Orbit Controls */}
       <OrbitControls
         makeDefault
         ref={controlRef}
         enableZoom={false}
         enablePan={false}
         rotateSpeed={0.4}
-        target={new THREE.Vector3(0, 0, 0)}
-        onEnd={() => setRotationState(controlRef.current.getAzimuthalAngle())}
+        target={target}
+        enabled={index === 1} // Only enable when active
+        onEnd={() => {
+          if (controlRef.current) {
+            setRotationState(controlRef.current.getAzimuthalAngle())
+          }
+        }}
       />
 
-     <group ref={groupRef} name={`${index === 1} ? 'small' : 'large`} position={[0, 0 ,0]}>
-        <Suspense fallback={Loader}>
-          <Iphone 
+      {/* 3D Model Group */}
+      <group
+        ref={groupRef}
+        name={index === 1 ? 'small' : 'large'}
+        position={[0, 0, 0]}
+      >
+        <Suspense fallback={<Loader />}>
+          <Iphone
             scale={index === 1 ? [15, 15, 15] : [17, 17, 17]}
             item={item}
             size={size}
           />
         </Suspense>
       </group>
-
     </View>
   )
 }
