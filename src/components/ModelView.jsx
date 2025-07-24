@@ -1,11 +1,9 @@
 import { OrbitControls, PerspectiveCamera, View } from '@react-three/drei'
 import Lights from './Lights'
+import Iphone from './Iphone'
 import * as THREE from 'three'
-import { lazy, Suspense, useMemo } from 'react'
+import { Suspense, useMemo } from 'react'
 import Loader from './Loader'
-
-// Lazy-load Iphone component
-const Iphone = lazy(() => import('./Iphone'))
 
 export default function ModelView({
   index,
@@ -16,7 +14,7 @@ export default function ModelView({
   size,
   item
 }) {
-  // Memoize the target vector to avoid re-creating every render
+  // Memoize target vector for better performance
   const target = useMemo(() => new THREE.Vector3(0, 0, 0), [])
 
   return (
@@ -31,18 +29,19 @@ export default function ModelView({
       {/* Perspective Camera */}
       <PerspectiveCamera makeDefault position={[0, 0, 4]} />
 
-      {/* Lighting setup */}
+      {/* Scene Lights */}
       <Lights />
 
-      {/* Orbit Controls */}
+      {/* Orbit Controls with smooth inertia */}
       <OrbitControls
         makeDefault
         ref={controlRef}
         enableZoom={false}
         enablePan={false}
         rotateSpeed={0.4}
+        dampingFactor={0.1}
+        enableDamping={true}
         target={target}
-        enabled={index === 1} // Only enable when active
         onEnd={() => {
           if (controlRef.current) {
             setRotationState(controlRef.current.getAzimuthalAngle())
